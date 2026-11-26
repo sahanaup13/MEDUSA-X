@@ -169,19 +169,299 @@ MEDUSA-X is intended as a clinical information support platform, not a replaceme
 ```text
 MEDUSA-X/
 │
-├── backend/
-│   ├── manage.py
-│   ├── records/
-│   ├── reconciliation/
-│   └── ...
-│
-├── web/
-│   ├── src/
-│   ├── public/
-│   └── ...
-│
+├── .gitignore
 ├── README.md
-└── ...
+│
+├── MEDUSA-X/
+│   ├── .gitignore
+│   │
+│   └── backend/
+│       ├── db.sqlite3
+│       ├── manage.py
+│       │
+│       ├── accounts/
+│       │   ├── admin.py
+│       │   ├── apps.py
+│       │   ├── models.py
+│       │   ├── tests.py
+│       │   ├── urls.py
+│       │   ├── views.py
+│       │   ├── __init__.py
+│       │   └── migrations/
+│       │       └── __init__.py
+│       │
+│       ├── alerts/
+│       │   ├── admin.py
+│       │   ├── apps.py
+│       │   ├── models.py
+│       │   ├── tests.py
+│       │   ├── urls.py
+│       │   ├── views.py
+│       │   ├── __init__.py
+│       │   └── migrations/
+│       │       ├── 0001_initial.py
+│       │       └── __init__.py
+│       │
+│       ├── audit/
+│       │   ├── admin.py
+│       │   ├── apps.py
+│       │   ├── models.py
+│       │   ├── services.py
+│       │   ├── tests.py
+│       │   ├── urls.py
+│       │   ├── views.py
+│       │   ├── __init__.py
+│       │   └── migrations/
+│       │       ├── 0001_initial.py
+│       │       └── __init__.py
+│       │
+│       ├── clinical_ai/
+│       │   ├── admin.py
+│       │   ├── apps.py
+│       │   ├── models.py
+│       │   ├── services.py
+│       │   ├── tests.py
+│       │   ├── urls.py
+│       │   ├── views.py
+│       │   ├── __init__.py
+│       │   └── migrations/
+│       │       ├── 0001_initial.py
+│       │       └── __init__.py
+│       │
+│       ├── config/
+│       │   ├── asgi.py
+│       │   ├── settings.py
+│       │   ├── urls.py
+│       │   ├── wsgi.py
+│       │   └── __init__.py
+│       │
+│       ├── patients/
+│       │   ├── admin.py
+│       │   ├── apps.py
+│       │   ├── models.py
+│       │   ├── serializers.py
+│       │   ├── tests.py
+│       │   ├── urls.py
+│       │   ├── views.py
+│       │   ├── __init__.py
+│       │   └── migrations/
+│       │       ├── 0001_initial.py
+│       │       └── __init__.py
+│       │
+│       ├── reconciliation/
+│       │   ├── admin.py
+│       │   ├── apps.py
+│       │   ├── models.py
+│       │   ├── services.py
+│       │   ├── tests.py
+│       │   ├── urls.py
+│       │   ├── views.py
+│       │   ├── __init__.py
+│       │   └── migrations/
+│       │       ├── 0001_initial.py
+│       │       └── __init__.py
+│       │
+│       ├── records/
+│       │   ├── admin.py
+│       │   ├── apps.py
+│       │   ├── models.py
+│       │   ├── serializers.py
+│       │   ├── tests.py
+│       │   ├── urls.py
+│       │   ├── views.py
+│       │   ├── __init__.py
+│       │   └── migrations/
+│       │       ├── 0001_initial.py
+│       │       └── __init__.py
+│       │
+│       └── media/
+│           └── clinical_documents/
+│               ├── Emergency_Patient_Triage_and_Intake_Record_3.pdf
+│               ├── Emergency_Patient_Triage_and_Intake_Record_3_Jc6XMhG.pdf
+│               └── Emergency_Patient_Triage_and_Intake_Record_3_LR3O5cz.pdf
+│
+├── MEDUSA-X/backend/
+│   ├── .env
+│   ├── .env.txt
+│   ├── db.sqlite3
+│   ├── final_inspection.txt
+│   ├── manage.py
+│   ├── requirements.txt
+│   ├── services_backup.txt
+│   │
+│   ├── accounts/
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── models.py
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   ├── views.py
+│   │   ├── __init__.py
+│   │   └── migrations/
+│   │       └── __init__.py
+│   │
+│   ├── alerts/
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── models.py
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   ├── views.py
+│   │   ├── __init__.py
+│   │   └── migrations/
+│   │       ├── 0001_initial.py
+│   │       └── __init__.py
+│   │
+│   ├── audit/
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── models.py
+│   │   ├── services.py
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   ├── views.py
+│   │   ├── __init__.py
+│   │   └── migrations/
+│   │       ├── 0001_initial.py
+│   │       └── __init__.py
+│   │
+│   ├── clinical_ai/
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── models.py
+│   │   ├── services.py
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   ├── views.py
+│   │   ├── __init__.py
+│   │   └── migrations/
+│   │       ├── 0001_initial.py
+│   │       └── __init__.py
+│   │
+│   ├── config/
+│   │   ├── asgi.py
+│   │   ├── settings.py
+│   │   ├── urls.py
+│   │   ├── wsgi.py
+│   │   └── __init__.py
+│   │
+│   ├── patients/
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── models.py
+│   │   ├── serializers.py
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   ├── views.py
+│   │   ├── __init__.py
+│   │   └── migrations/
+│   │       ├── 0001_initial.py
+│   │       └── __init__.py
+│   │
+│   ├── reconciliation/
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── models.py
+│   │   ├── services.py
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   ├── views.py
+│   │   ├── __init__.py
+│   │   └── migrations/
+│   │       ├── 0001_initial.py
+│   │       └── __init__.py
+│   │
+│   ├── records/
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── models.py
+│   │   ├── serializers.py
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   ├── views.py
+│   │   ├── __init__.py
+│   │   └── migrations/
+│   │       ├── 0001_initial.py
+│   │       └── __init__.py
+│   │
+│   └── media/
+│       └── clinical_documents/
+│           ├── 1_Blood_Test_Lab_Report_1.pdf
+│           ├── 1_Blood_Test_Lab_Report_1_718k8SO.pdf
+│           ├── Emergency_Patient_Triage_and_Intake_Record_3.pdf
+│           ├── Emergency_Patient_Triage_and_Intake_Record_3_Jc6XMhG.pdf
+│           ├── Emergency_Patient_Triage_and_Intake_Record_3_LR3O5cz.pdf
+│           ├── Sahana_BP_Checkup_Synthetic_Record.pdf
+│           └── sample_laboratory_report_hackathon.pdf
+│
+├── MEDUSA-X/web/
+│   ├── .gitignore
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── README.md
+│   ├── README.txt
+│   ├── vite.config.js
+│   │
+│   ├── public/
+│   │   ├── favicon.svg
+│   │   ├── icons.svg
+│   │   └── models/
+│   │       ├── doctor.glb
+│   │       └── patient.glb
+│   │
+│   └── src/
+│       ├── api-backup.js
+│       ├── api.js
+│       ├── App.css
+│       ├── App.jsx
+│       ├── index.css
+│       ├── Landing.css
+│       ├── Landing.jsx
+│       ├── main.jsx
+│       ├── MedusaHospital3D.css
+│       ├── MedusaHospital3D.jsx
+│       └── assets/
+│           ├── hero.png
+│           ├── react.svg
+│           └── vite.svg
+│
+└── web/
+    ├── .gitignore
+    ├── eslint.config.js
+    ├── index.html
+    ├── package-lock.json
+    ├── package.json
+    ├── README.md
+    ├── README.txt
+    ├── vite.config.js
+    │
+    ├── public/
+    │   ├── favicon.svg
+    │   ├── icons.svg
+    │   └── models/
+    │       ├── doctor.glb
+    │       └── patient.glb
+    │
+    └── src/
+        ├── api-backup.js
+        ├── api.js
+        ├── App.css
+        ├── App.jsx
+        ├── index.css
+        ├── Landing.css
+        ├── Landing.jsx
+        ├── Layout.css
+        ├── Login.css
+        ├── Login.jsx
+        ├── main.jsx
+        ├── MedusaHospital3D.css
+        ├── MedusaHospital3D.jsx
+        └── assets/
+            ├── hero.png
+            ├── react.svg
+            └── vite.svg
 ```
 
 ## 🚀 Project Objectives
