@@ -1,4 +1,6 @@
+
 import re
+import json
 
 
 CATEGORIES = [
@@ -13,6 +15,10 @@ CATEGORIES = [
     "Clinical Plan",
 ]
 
+
+# --------------------------------------------------
+# TEXT CLEANING
+# --------------------------------------------------
 
 def clean_text(text):
     """Normalize extracted PDF text and repair common encoding errors."""
@@ -58,7 +64,18 @@ def extract_section(text, heading, stop_headings):
     return match.group(1).strip() if match else ""
 
 
-def add_finding(findings, evidence, category, value, document, source=None):
+# --------------------------------------------------
+# FINDING AND EVIDENCE MANAGEMENT
+# --------------------------------------------------
+
+def add_finding(
+    findings,
+    evidence,
+    category,
+    value,
+    document,
+    source=None,
+):
     value = re.sub(
         r"\s+",
         " ",
@@ -124,7 +141,11 @@ def extract_medications(text, document, findings, evidence):
 
     for pattern in medication_patterns:
 
-        for match in re.finditer(pattern, plan, re.IGNORECASE):
+        for match in re.finditer(
+            pattern,
+            plan,
+            re.IGNORECASE,
+        ):
 
             medication = " ".join(match.group(0).split())
 
@@ -231,7 +252,7 @@ def extract_vitals(text, document, findings, evidence):
                     match.group(0),
                 )
 
-    # Fallback for documents with directly labelled values.
+    # Fallback for directly labelled values.
 
     direct_patterns = [
         (
@@ -282,6 +303,7 @@ def extract_vitals(text, document, findings, evidence):
 # --------------------------------------------------
 # TEST RESULTS EXTRACTION
 # --------------------------------------------------
+
 def extract_test_results(text, document, findings, evidence):
 
     lab_tests = [
@@ -347,6 +369,7 @@ def extract_test_results(text, document, findings, evidence):
             document,
             match.group(0),
         )
+
 
 # --------------------------------------------------
 # MAIN DOCUMENT EXTRACTION
@@ -589,64 +612,176 @@ def extract_clinical_findings(documents):
 
 
 # --------------------------------------------------
-# BUILD CLINICAL INTELLIGENCE REPORT
+# OLLAMA LOCAL LLM - DISCHARGE SUMMARY GENERATION
+# --------------------------------------------------
+
+def generate_ollama_discharge_draft(findings, documents):
+    """
+    Generate a clinician-reviewable draft using a local Ollama LLM.
+    """
+
+    import os
+    from ollama import Client
+
+    model = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
+    base_url = os.getenv(
+        "OLLAMA_BASE_URL",
+        "http://localhost:11434",
+    )
+
+    client = Client(
+        host=base_url,
+        timeout=180,
+    )
+
+    source_ids = [doc.id for doc in documents]
+
+    source_data = {
+        "findings": findings,
+        "documents": [
+            {
+                "document_id": doc.id,
+                "document_type": doc.document_type,
+                "title": doc.title,
+                "status": doc.status,
+            }
+            for doc in documents
+        ],
+    }
+
+    prompt = f"""
+You are MEDUSA-X, a clinical document intelligence assistant.
+
+Generate a structured DISCHARGE SUMMARY DRAFT using ONLY
+the supplied extracted clinical information.
+
+STRICT SAFETY RULES:
+
+1. Never invent clinical information.
+2. Never create or infer a diagnosis.
+3. Never prescribe medicines or treatment.
+4. Never change investigation values or units.
+5. Never assume missing information.
+6. Clearly identify missing information.
+7. Report possible conflicts only when supplied documents
+   explicitly contain different values for the same item.
+8. Never resolve conflicts yourself.
+9. Preserve medication names and documented dosages exactly.
+10. Preserve source document IDs.
+11. Do not claim that a doctor approved the report.
+12. If information is unavailable, write:
+    "Not available in supplied documents."
+
+Use these headings:
+
+1. Clinical Overview
+2. Documented Diagnoses
+3. Symptoms and Clinical History
+4. Examination Findings
+5. Investigation Results
+6. Vitals
+7. Medication Information
+8. Allergies
+9. Missing Information
+10. Possible Conflicting Information
+11. Documents Reviewed
+12. Clinician Verification Checklist
+
+Only use these source document IDs:
+{source_ids}
+
+For every finding, retain its source document ID wherever possible.
+
+This is a draft for clinician review, NOT a final discharge
+instruction or independent medical opinion.
+
+SOURCE DATA:
+
+{json.dumps(source_data, ensure_ascii=False, default=str)}
+"""
+
+    response = client.chat(
+        model=model,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        options={
+            "temperature": 0.1,
+        },
+    )
+
+    summary = response.message.content
+
+    if not summary or not summary.strip():
+        raise ValueError("Ollama returned an empty response.")
+
+    return summary.strip()
+
+
+# --------------------------------------------------
+# BUILD CLINICAL SUMMARY
 # --------------------------------------------------
 
 def build_clinical_summary(patient, documents):
 
     findings, evidence = extract_clinical_findings(documents)
 
-    sections = [
-        "MEDUSA-X CLINICAL INTELLIGENCE REPORT",
-        f"Patient: {patient.full_name}",
-        f"Documents reviewed: {len(documents)}",
-        "",
-        "DOCUMENT-BASED INFORMATION",
-        "Information extracted from uploaded documents.",
-        "Not independently medically verified.",
-    ]
+    try:
 
-    for category, items in findings.items():
+        summary_text = generate_ollama_discharge_draft(
+            findings,
+            documents,
+        )
+
+        engine = "Ollama Local LLM - MEDUSA-X"
+
+    except Exception as error:
+
+        print(f"Ollama generation failed: {error}")
+
+        # Extraction-only fallback.
+        # This is NOT a reconciled discharge summary.
+
+        sections = [
+            "MEDUSA-X CLINICAL INTELLIGENCE REPORT",
+            f"Patient: {patient.full_name}",
+            f"Documents reviewed: {len(documents)}",
+            "",
+            "LOCAL AI GENERATION UNAVAILABLE",
+            "Existing document extraction report generated.",
+        ]
+
+        for category, items in findings.items():
+
+            sections.extend(["", category.upper()])
+
+            if not items:
+                sections.append(
+                    "No matching information extracted."
+                )
+                continue
+
+            for item in items:
+
+                sections.append(
+                    f"- {item['value']} "
+                    f"[Source: {item['document']}; "
+                    f"Document ID: {item['document_id']}]"
+                )
 
         sections.extend([
             "",
-            category.upper(),
+            "CLINICAL VERIFICATION REQUIRED",
+            "A qualified clinician must verify all information.",
+            "This prototype does not independently diagnose "
+            "or recommend treatment.",
         ])
 
-        if not items:
+        summary_text = "\n".join(sections)
 
-            sections.append(
-                "No matching information extracted."
-            )
+        engine = "MEDUSA-X Existing Extraction Fallback"
 
-            continue
-
-        for item in items:
-
-            sections.append(
-                f"- {item['value']} "
-                f"[Source: {item['document']}; "
-                f"Document ID: {item['document_id']}]"
-            )
-
-    sections.extend([
-        "",
-        "DOCUMENT REVIEW",
-    ])
-
-    for document in documents:
-
-        sections.append(
-            f"- {document.title}: {document.status}"
-        )
-
-    sections.extend([
-        "",
-        "CLINICAL VERIFICATION REQUIRED",
-        "A qualified clinician must verify all extracted information "
-        "against the original records.",
-        "This prototype does not independently diagnose disease "
-        "or recommend treatment.",
-    ])
-
-    return "\n".join(sections), findings, evidence
+    return summary_text, findings, evidence, engine
