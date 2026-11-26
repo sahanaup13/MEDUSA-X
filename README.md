@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="assets/medusa-banner.png" width="100%" alt="MEDUSA-X">
+</p>
 # 🏥 MEDUSA-X
 ### The Clinical Record That Cannot Be Trusted
 
